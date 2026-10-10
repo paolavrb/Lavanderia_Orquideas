@@ -86,7 +86,7 @@ namespace LavanderiaOrquideas
                     break;
             }
 
-            ord.DetallePrendas = string.Join(" | ", detalles);
+            ord.DetallePrendas = string.Join(" | ",detalles);
             ord.Total = totalTemp;
             ord.Estado = "pendiente";
 
