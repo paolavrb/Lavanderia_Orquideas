@@ -47,83 +47,165 @@ namespace LavanderiaOrquideas
 
         public void RegistrarNuevaOrdenInteractiva()
         {
-            Console.WriteLine("\n--- NUEVA ORDEN DE SERVICIO ---");
-            Orden ord = new Orden();
-            ord.NumeroOrden = GenerarNuevoCodigo();
-            ord.FechaRecepcion = DateTime.Now;
+            Console.WriteLine("\n--- REGISTRO DE NUEVA ORDEN DE SERVICIO ---");
+            Orden o = new Orden();
 
-            ord.Cliente = Utilidades.LeerNombreValido("Nombre del cliente: ");
-            ord.Telefono = Utilidades.LeerTelefonoValido("Teléfono (9 dígitos): ");
-            Console.Write("Dirección: ");
-            ord.Direccion = Console.ReadLine();
+            o.NumeroOrden = listaOrdenes.Count + 1;
 
-            int cantPrendas = Utilidades.LeerEnteroPositivo("¿Cuántas prendas o bultos desea registrar?: ");
-            decimal totalTemp = 0;
-            List<string> detalles = new List<string>();
-
-            for (int i = 1; i <= cantPrendas; i++)
-                Console.WriteLine("Tipo de Servicio: 1. Al seco | 2. Normal | 3. Edredones | 4. Zapatillas");
-            Console.Write("Opción: ");
-            string opcServ = Console.ReadLine();
-
-            string servicio;
-            switch (opcServ)
+            // 1. VALIDACIÓN DE NOMBRE (Solo letras y espacios)
+            string clienteValido = "";
+            while (true)
             {
-                case "1":
-                    servicio = "Al seco";
+                Console.Write("CLIENTE : ");
+                string entrada = Console.ReadLine()?.Trim();
+                if (!string.IsNullOrEmpty(entrada) && System.Text.RegularExpressions.Regex.IsMatch(entrada, @"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"))
+                {
+                    clienteValido = entrada;
                     break;
-                case "2":
-                    servicio = "Normal";
+                }
+                Console.WriteLine("[Error] El nombre solo debe contener letras y espacios.");
+            }
+            o.Cliente = clienteValido;
+
+            // 2. VALIDACIÓN DE TELÉFONO (9 dígitos y empieza con 9)
+            string telefonoValido = "";
+            while (true)
+            {
+                Console.Write("TELÉF   : ");
+                string entrada = Console.ReadLine()?.Trim();
+                if (entrada.Length == 9 && long.TryParse(entrada, out _) && entrada.StartsWith("9"))
+                {
+                    telefonoValido = entrada;
                     break;
-                case "3":
-                    servicio = "Edredones";
-                    break;
-                case "4":
-                    servicio = "Zapatillas";
-                    break;
-                default:
-                    servicio = "General";
-                    break;
+                }
+                Console.WriteLine("[Error] El teléfono debe tener 9 dígitos y empezar con 9.");
+            }
+            o.Telefono = telefonoValido;
+
+            Console.Write("DIRECC  : ");
+            o.Direccion = Console.ReadLine();
+
+            o.FechaRecepcion = DateTime.Now;
+            o.FechaEntrega = DateTime.Now.AddDays(3);
+
+            // 3. CAPTURA DE PRENDAS Y CÁLCULO DEL TOTAL
+            string detallesConcatenados = "";
+            decimal totalAcumulado = 0m;
+            string continuar = "s";
+
+            while (continuar.ToLower() == "s")
+            {
+                Console.WriteLine("\n--- Seleccione el Tipo de Servicio ---");
+                Console.WriteLine("1. Lavado Normal (al agua)");
+                Console.WriteLine("2. Lavado al Seco");
+                Console.WriteLine("3. Edredón / Cobertores");
+                Console.WriteLine("4. Alfombra");
+                Console.WriteLine("5. Zapatillas");
+                Console.WriteLine("6. Lavado por Kilo");
+                Console.WriteLine("7. Otro servicio (Teñido, etc.)");
+                Console.Write("Opción (1-7): ");
+
+                string opcionServicio = Console.ReadLine();
+                string tipoServicio = "";
+
+                switch (opcionServicio)
+                {
+                    case "1":
+                        tipoServicio = "Lavado Normal (al agua)";
+                        break;
+                    case "2":
+                        tipoServicio = "Lavado al Seco";
+                        break;
+                    case "3":
+                        tipoServicio = "Edredón / Cobertores";
+                        break;
+                    case "4":
+                        tipoServicio = "Alfombra";
+                        break;
+                    case "5":
+                        tipoServicio = "Zapatillas";
+                        break;
+                    case "6":
+                        tipoServicio = "Lavado por Kilo";
+                        break;
+                    case "7":
+                        tipoServicio = "Otro servicio";
+                        break;
+                    default:
+                        tipoServicio = "Especial";
+                        break;
+                }
+
+                Console.Write("Ingrese descripción de la prenda / artículo: ");
+                string descripcion = Console.ReadLine();
+
+                // Validación de Importe (Solo números positivos mayores a cero)
+                decimal precio = 0m;
+                while (true)
+                {
+                    Console.Write("Ingrese importe (S/): ");
+                    if (decimal.TryParse(Console.ReadLine(), out precio) && precio > 0)
+                    {
+                        break;
+                    }
+                    Console.WriteLine("[Error] Ingrese un monto positivo válido mayor a 0.");
+                }
+
+                // Sumar al acumulador total
+                totalAcumulado += precio;
+
+                // Concatenar texto de detalle
+                if (detallesConcatenados != "") detallesConcatenados += " | ";
+                detallesConcatenados += "[" + tipoServicio + "] " + descripcion + " (S/ " + precio.ToString("F2") + ")";
+
+                Console.Write("¿Desea agregar otra prenda/servicio? (s/n): ");
+                continuar = Console.ReadLine();
             }
 
-            ord.DetallePrendas = string.Join(" | ",detalles);
-            ord.Total = totalTemp;
-            ord.Estado = "pendiente";
+            // Asignación final al objeto orden
+            o.DetallePrendas = detallesConcatenados;
+            o.Total = totalAcumulado;
 
-            Console.WriteLine($"\nTOTAL A PAGAR: S/ {ord.Total:F2}");
-            Console.Write("Ingrese monto A CUENTA S/ (0 si no deja adelanto): ");
-            if (decimal.TryParse(Console.ReadLine(), out decimal acuenta))
+            // 4. VALIDACIÓN DEL MONTO "A CUENTA" (No negativo ni mayor al total)
+            decimal acuentaIngresado = 0m;
+            while (true)
             {
-                ord.ACuenta = acuenta;
+                Console.Write("\nA CUENTA (S/ - Máximo " + o.Total.ToString("F2") + "): ");
+                if (decimal.TryParse(Console.ReadLine(), out acuentaIngresado) && acuentaIngresado >= 0 && acuentaIngresado <= o.Total)
+                {
+                    break;
+                }
+                Console.WriteLine("[Error] El adelanto debe ser entre S/ 0.00 y el total de la orden (S/ " + o.Total.ToString("F2") + ").");
             }
+            o.ACuenta = acuentaIngresado;
 
-            ord.FechaEntrega = DateTime.Now.AddDays(3);
+            o.Estado = "pendiente";
 
-            listaOrdenes.Add(ord);
-            ImprimirTicket(ord);
+            // Guardar en la lista e imprimir el ticket
+            listaOrdenes.Add(o);
+            ImprimirTicket(o);
         }
 
-        public void ImprimirTicket(Orden ord)
+        public void ImprimirTicket(Orden o)
         {
-            Console.Clear();
-            Console.WriteLine("==================================================");
+            Console.WriteLine("\n==================================================");
             Console.WriteLine("               ORQUÍDEAS LAVANDERÍA               ");
-            Console.WriteLine(" CC. SAN FELIPE TDA 2 - RES. SAN FELIPE - JESÚS MARÍA");
+            Console.WriteLine(" CC. SAN FELIPE TDA 2 - RES. SAN FELIPE - JESÚS MARÍA ");
             Console.WriteLine("             Teléf.: 4610235-976344217            ");
             Console.WriteLine("==================================================");
-            Console.WriteLine($"O/S N.° : {ord.NumeroOrden}");
-            Console.WriteLine($"CLIENTE : {ord.Cliente}");
-            Console.WriteLine($"TELÉF   : {ord.Telefono}");
-            Console.WriteLine($"DIRECC  : {ord.Direccion}");
-            Console.WriteLine($"FECHA   : {Utilidades.FormatearFecha(ord.FechaRecepcion)}");
+            Console.WriteLine($"O/S N.° : {o.NumeroOrden}");
+            Console.WriteLine($"CLIENTE : {o.Cliente}");
+            Console.WriteLine($"TELÉF   : {o.Telefono}");
+            Console.WriteLine($"DIRECC  : {o.Direccion}");
+            Console.WriteLine($"FECHA   : {o.FechaRecepcion:dd/MM/yyyy}");
             Console.WriteLine("--------------------------------------------------");
-            Console.WriteLine($"DETALLE : {ord.DetallePrendas}");
+            Console.WriteLine($"DETALLE : {o.DetallePrendas}");
             Console.WriteLine("--------------------------------------------------");
-            Console.WriteLine($"TOTAL A PAGAR : S/ {ord.Total:F2}");
-            Console.WriteLine($"A CUENTA      : S/ {ord.ACuenta:F2}");
-            Console.WriteLine($"SALDO         : S/ {ord.Saldo:F2}");
-            Console.WriteLine($"FECHA ENTREGA : {Utilidades.FormatearFecha(ord.FechaEntrega)}");
-            Console.WriteLine("==================================================\n");
+            Console.WriteLine($"TOTAL A PAGAR : S/ {o.Total:F2}");
+            Console.WriteLine($"A CUENTA      : S/ {o.ACuenta:F2}");
+            Console.WriteLine($"SALDO         : S/ {(o.Total - o.ACuenta):F2}");
+            Console.WriteLine($"FECHA ENTREGA : {o.FechaEntrega:dd/MM/yyyy}");
+            Console.WriteLine("==================================================");
         }
 
         public void BuscarPorCliente(string nombre)

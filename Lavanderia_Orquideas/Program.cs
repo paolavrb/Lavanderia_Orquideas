@@ -95,7 +95,7 @@ namespace LavanderiaOrquideas
             decimal p4 = 14.00m; // Manta delgada beige
             decimal p5 = 27.00m; // Cubrecama 2 plz + 2 fundas
 
-            ordenReal.DetallePrendas = "1 Zapatilla Palo Rosa [Normal] | 1 Mochila negro [Normal] | 1 Protector colchón [Normal] | 1 Manta delgada [Normal] | 1 Cubrecama 2 plz [Normal]";
+            ordenReal.DetallePrendas = "1 Zapatilla Palo Rosa | 1 Mochila negro | 1 Protector colchón | 1 Manta delgada | 1 Cubrecama 2 plz";
             ordenReal.Total = p1 + p2 + p3 + p4 + p5; // Suma automática = S/ 101.00
 
             // 1. Registro
@@ -104,7 +104,7 @@ namespace LavanderiaOrquideas
             service.ImprimirTicket(ordenReal);
 
             // 2. Validación de Total
-            Console.WriteLine($"[Paso 2] Validación de Monto Total Calculado: S/ {ordenReal.Total:F2} (Coincide con la O/S real: S/ 101.00)");
+            Console.WriteLine($"\n[Paso 2] Validación de Monto Total Calculado: S/ {ordenReal.Total:F2} (Coincide con la O/S real: S/ 101.00)");
 
             // 3. Cambio de Estado
             Console.WriteLine("\n[Paso 3] Cambiando estado de 'pendiente' a 'entregado'...");
