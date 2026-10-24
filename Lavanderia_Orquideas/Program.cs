@@ -71,6 +71,7 @@ namespace LavanderiaOrquideas
         }
 
         // Script de prueba con los datos reales observados en el Informe (O/S N.° 106827)
+        // Script de prueba con los datos reales observados en el Informe (O/S N.° 106827)
         static void EjecutarDemoReal()
         {
             Console.Clear();
@@ -85,7 +86,10 @@ namespace LavanderiaOrquideas
                 FechaRecepcion = new DateTime(2026, 9, 5),
                 FechaEntrega = new DateTime(2026, 9, 12),
                 ACuenta = 0.00m,
-                Estado = "pendiente"
+                Estado = "pendiente",
+                PesoKg = 4.5,                 // <-- NUEVO: Peso de la orden en kg
+                IncluyeRecojo = true,         // <-- NUEVO: Indica si incluye recojo
+                CondicionPago = "Cancelado"   // <-- NUEVO: Condición de salida del producto
             };
 
             // Detalle de ítems recibidos según la orden de servicio observada
