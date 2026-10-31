@@ -3,27 +3,28 @@ using System.Collections.Generic;
 
 namespace LavanderiaOrquideas
 {
-    // Clase que representa el modelo de una Orden de Servicio
     public class Orden
     {
         public int NumeroOrden { get; set; }
         public string Cliente { get; set; }
         public string Telefono { get; set; }
         public string Direccion { get; set; }
-        public double PesoKg { get; set; }             // Punto 1: Peso acumulado en kilogramos
-        public string CondicionPago { get; set; }      // Punto 5: "Cancelado" o "A cuenta"
         public string DetallePrendas { get; set; }
         public decimal Total { get; set; }
         public decimal ACuenta { get; set; }
-        public bool IncluyeRecojo { get; set; }        // Punto 4: Opción de recojo a domicilio
         public decimal Saldo => Total - ACuenta;
-        public string Estado { get; set; } // "pendiente" o "entregado"
+        public string Estado { get; set; }
         public DateTime FechaRecepcion { get; set; }
         public DateTime FechaEntrega { get; set; }
 
+        public double PesoKg { get; set; }
+        public bool IncluyeRecojo { get; set; }
+        public string CondicionPago { get; set; }
+        public string MetodoPago { get; set; }
+
         public string ParaArchivo()
         {
-            return $"{NumeroOrden};{Cliente};{Telefono};{Direccion};{DetallePrendas};{Total};{ACuenta};{Estado};{FechaRecepcion:yyyy-MM-dd};{FechaEntrega:yyyy-MM-dd}";
+            return NumeroOrden + ";" + Cliente + ";" + Telefono + ";" + Direccion + ";" + DetallePrendas + ";" + Total + ";" + ACuenta + ";" + Estado + ";" + FechaRecepcion.ToString("yyyy-MM-dd") + ";" + FechaEntrega.ToString("yyyy-MM-dd") + ";" + PesoKg + ";" + IncluyeRecojo + ";" + CondicionPago + ";" + MetodoPago;
         }
     }
 
@@ -31,7 +32,10 @@ namespace LavanderiaOrquideas
     {
         private List<Orden> listaOrdenes = new List<Orden>();
 
-        public List<Orden> ObtenerTodas() => listaOrdenes;
+        public List<Orden> ObtenerTodas()
+        {
+            return listaOrdenes;
+        }
 
         public void CargarOrdenes(List<Orden> ordenes)
         {
@@ -50,18 +54,20 @@ namespace LavanderiaOrquideas
 
         public void RegistrarNuevaOrdenInteractiva()
         {
-            Console.WriteLine("\n--- REGISTRO DE NUEVA ORDEN DE SERVICIO ---");
+            Console.WriteLine();
+            Console.WriteLine("--- REGISTRO DE NUEVA ORDEN DE SERVICIO ---");
             Orden o = new Orden();
 
             o.NumeroOrden = listaOrdenes.Count + 1;
 
-            // 1. VALIDACIÓN DE NOMBRE (Solo letras y espacios)
             string clienteValido = "";
             while (true)
             {
                 Console.Write("CLIENTE : ");
-                string entrada = Console.ReadLine()?.Trim();
-                if (!string.IsNullOrEmpty(entrada) && System.Text.RegularExpressions.Regex.IsMatch(entrada, @"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"))
+                string entrada = Console.ReadLine();
+                if (entrada != null) entrada = entrada.Trim();
+
+                if (!string.IsNullOrEmpty(entrada) && System.Text.RegularExpressions.Regex.IsMatch(entrada, "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$"))
                 {
                     clienteValido = entrada;
                     break;
@@ -70,12 +76,13 @@ namespace LavanderiaOrquideas
             }
             o.Cliente = clienteValido;
 
-            // 2. VALIDACIÓN DE TELÉFONO (9 dígitos y empieza con 9)
             string telefonoValido = "";
             while (true)
             {
                 Console.Write("TELÉF   : ");
-                string entrada = Console.ReadLine()?.Trim();
+                string entrada = Console.ReadLine();
+                if (entrada != null) entrada = entrada.Trim();
+
                 if (entrada.Length == 9 && long.TryParse(entrada, out _) && entrada.StartsWith("9"))
                 {
                     telefonoValido = entrada;
@@ -88,31 +95,14 @@ namespace LavanderiaOrquideas
             Console.Write("DIRECC  : ");
             o.Direccion = Console.ReadLine();
 
-            // --- OPCIÓN DE RECOJO ---
             Console.Write("¿Incluye servicio de recojo a domicilio? (s/n): ");
-            string recojoInput = Console.ReadLine()?.Trim().ToLower();
+            string recojoInput = Console.ReadLine();
+            if (recojoInput != null) recojoInput = recojoInput.Trim().ToLower();
             o.IncluyeRecojo = (recojoInput == "s");
-
-            // --- CONDICIÓN DE PAGO (Simplificado a 2 opciones) ---
-            Console.WriteLine("\n--- Condición de Salida del Producto ---");
-            Console.WriteLine("1. Cancelado (Pago total)");
-            Console.WriteLine("2. A cuenta (Con adelanto / saldo pendiente)");
-            Console.Write("Seleccione condición (1-2): ");
-            string opCondicion = Console.ReadLine();
-
-            if (opCondicion == "1")
-            {
-                o.CondicionPago = "Cancelado";
-            }
-            else
-            {
-                o.CondicionPago = "A cuenta";
-            }
 
             o.FechaRecepcion = DateTime.Now;
             o.FechaEntrega = DateTime.Now.AddDays(3);
 
-            // 3. CAPTURA DE PRENDAS Y CÁLCULO DEL TOTAL
             string detallesConcatenados = "";
             decimal totalAcumulado = 0m;
             double pesoTotalAcumulado = 0;
@@ -120,18 +110,21 @@ namespace LavanderiaOrquideas
 
             while (continuar.ToLower() == "s")
             {
-                Console.WriteLine("\n--- Seleccione el Tipo de Servicio ---");
+                Console.WriteLine();
+                Console.WriteLine("--- Seleccione el Tipo de Servicio ---");
                 Console.WriteLine("1. Lavado Normal (al agua)");
                 Console.WriteLine("2. Lavado al Seco");
                 Console.WriteLine("3. Edredón / Cobertores");
                 Console.WriteLine("4. Alfombra");
                 Console.WriteLine("5. Zapatillas");
-                Console.WriteLine("6. Lavado por Kilo");
+                Console.WriteLine("6. Lavado por Kilo (S/ 4.00 el kg)");
                 Console.WriteLine("7. Otro servicio (Teñido, etc.)");
                 Console.Write("Opción (1-7): ");
 
                 string opcionServicio = Console.ReadLine();
                 string tipoServicio = "";
+                decimal precio = 0m;
+                double pesoPrenda = 0;
 
                 switch (opcionServicio)
                 {
@@ -148,29 +141,33 @@ namespace LavanderiaOrquideas
                 Console.Write("Ingrese descripción de la prenda / artículo: ");
                 string descripcion = Console.ReadLine();
 
-                // --- VALIDACIÓN DE PESO (A nivel de prenda/servicio y sin negativos) ---
-                double pesoPrenda = 0;
-                while (true)
-                {
-                    Console.Write("Ingrese el peso en kilogramos (Kg) [Mínimo 0]: ");
-                    if (double.TryParse(Console.ReadLine(), out pesoPrenda) && pesoPrenda >= 0)
-                    {
-                        break;
-                    }
-                    Console.WriteLine("[Error] El peso no puede ser un número negativo. Ingrese un valor válido (>= 0).");
-                }
-
-                pesoTotalAcumulado += pesoPrenda;
-
-                // --- CÁLCULO AUTOMÁTICO SI ES LAVADO POR KILO (S/ 4.00 el kilo) O MANUAL ---
-                decimal precio = 0m;
                 if (opcionServicio == "6")
                 {
+                    while (true)
+                    {
+                        Console.Write("Ingrese cuántos kilogramos (Kg) son: ");
+                        if (double.TryParse(Console.ReadLine(), out pesoPrenda) && pesoPrenda > 0)
+                        {
+                            break;
+                        }
+                        Console.WriteLine("[Error] Ingrese un peso válido mayor a 0.");
+                    }
+
                     precio = (decimal)pesoPrenda * 4.00m;
-                    Console.WriteLine($"[Cálculo automático] {pesoPrenda} Kg x S/ 4.00 = S/ {precio:F2}");
+                    Console.WriteLine("-> Cálculo automático por Kilo (" + pesoPrenda + " Kg x S/ 4.00) = S/ " + precio.ToString("F2"));
                 }
                 else
                 {
+                    while (true)
+                    {
+                        Console.Write("Ingrese el peso en kilogramos (Kg) para este ítem [Mínimo 0]: ");
+                        if (double.TryParse(Console.ReadLine(), out pesoPrenda) && pesoPrenda >= 0)
+                        {
+                            break;
+                        }
+                        Console.WriteLine("[Error] El peso no puede ser negativo.");
+                    }
+
                     while (true)
                     {
                         Console.Write("Ingrese importe (S/): ");
@@ -178,81 +175,140 @@ namespace LavanderiaOrquideas
                         {
                             break;
                         }
-                        Console.WriteLine("[Error] Ingrese un monto positivo válido mayor a 0.");
+                        Console.WriteLine("[Error] Ingrese un monto válido mayor a 0.");
                     }
                 }
 
-                // Sumar al acumulador total
+                pesoTotalAcumulado += pesoPrenda;
                 totalAcumulado += precio;
 
-                // Concatenar texto de detalle
                 if (detallesConcatenados != "") detallesConcatenados += " | ";
                 detallesConcatenados += "[" + tipoServicio + "] " + descripcion + " (" + pesoPrenda + " Kg) - S/ " + precio.ToString("F2");
 
-                Console.Write("¿Desea agregar otra prenda/servicio? (s/n): ");
-                continuar = Console.ReadLine();
+                while (true)
+                {
+                    Console.Write("¿Desea agregar otra prenda/servicio? (s/n): ");
+                    string respuesta = Console.ReadLine();
+                    if (respuesta != null) respuesta = respuesta.Trim().ToLower();
+
+                    if (respuesta == "s" || respuesta == "n")
+                    {
+                        continuar = respuesta;
+                        break;
+                    }
+                    Console.WriteLine("[Error] Opción no válida. Ingrese 's' para sí o 'n' para no.");
+                }
             }
 
-            // Asignación final al objeto orden
             o.DetallePrendas = detallesConcatenados;
             o.Total = totalAcumulado;
             o.PesoKg = pesoTotalAcumulado;
 
-            // 4. VALIDACIÓN DEL MONTO "A CUENTA"
-            decimal acuentaIngresado = 0m;
-            while (true)
+            Console.WriteLine();
+            Console.WriteLine("--- Condición de Salida del Pago ---");
+            Console.WriteLine("1. Cancelado (Completo)");
+            Console.WriteLine("2. Con Adelanto (A cuenta)");
+            Console.Write("Seleccione condición (1-2): ");
+            string opCondicion = Console.ReadLine();
+            if (opCondicion == "1")
             {
-                Console.Write("\nA CUENTA / ADELANTO (S/ - Máximo " + o.Total.ToString("F2") + "): ");
-                if (decimal.TryParse(Console.ReadLine(), out acuentaIngresado) && acuentaIngresado >= 0 && acuentaIngresado <= o.Total)
+                o.CondicionPago = "Cancelado";
+            }
+            else
+            {
+                o.CondicionPago = "Con Adelanto";
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("--- Seleccione el Método de Pago ---");
+            Console.WriteLine("1. Yape / Plin");
+            Console.WriteLine("2. Transferencia");
+            Console.WriteLine("3. Efectivo");
+            Console.Write("Seleccione opción (1-3): ");
+            string opMetodo = Console.ReadLine();
+            switch (opMetodo)
+            {
+                case "1": o.MetodoPago = "Yape/Plin"; break;
+                case "2": o.MetodoPago = "Transferencia"; break;
+                case "3": o.MetodoPago = "Efectivo"; break;
+                default: o.MetodoPago = "Efectivo"; break;
+            }
+
+            decimal acuentaIngresado = 0m;
+            if (o.CondicionPago == "Con Adelanto")
+            {
+                while (true)
                 {
-                    break;
+                    Console.WriteLine();
+                    Console.Write("MONTO A CUENTA (S/ - Máximo " + o.Total.ToString("F2") + "): ");
+                    if (decimal.TryParse(Console.ReadLine(), out acuentaIngresado) && acuentaIngresado > 0 && acuentaIngresado < o.Total)
+                    {
+                        break;
+                    }
+                    Console.WriteLine("[Error] El adelanto debe ser mayor a 0 y menor al total.");
                 }
-                Console.WriteLine("[Error] El adelanto debe ser entre S/ 0.00 y el total de la orden (S/ " + o.Total.ToString("F2") + ").");
+            }
+            else
+            {
+                acuentaIngresado = o.Total;
             }
             o.ACuenta = acuentaIngresado;
 
             o.Estado = "pendiente";
 
-            // Guardar en la lista e imprimir el ticket
             listaOrdenes.Add(o);
             ImprimirTicket(o);
         }
 
         public void ImprimirTicket(Orden o)
         {
-            Console.WriteLine("\n==================================================");
+            Console.WriteLine();
+            Console.WriteLine("==================================================");
             Console.WriteLine("                ORQUÍDEAS LAVANDERÍA              ");
             Console.WriteLine(" CC. SAN FELIPE TDA 2 - RES. SAN FELIPE - JESÚS MARÍA ");
             Console.WriteLine("               Teléf.: 4610235-976344217          ");
             Console.WriteLine("==================================================");
-            Console.WriteLine($"O/S N.° : {o.NumeroOrden}");
-            Console.WriteLine($"CLIENTE : {o.Cliente}");
-            Console.WriteLine($"TELÉF   : {o.Telefono}");
-            Console.WriteLine($"DIRECC  : {o.Direccion}");
-            Console.WriteLine($"RECOJO  : {(o.IncluyeRecojo ? "Sí (A domicilio)" : "No (En tienda)")}");
-            Console.WriteLine($"FECHA   : {o.FechaRecepcion:dd/MM/yyyy}");
+            Console.WriteLine("O/S N.°       : " + o.NumeroOrden);
+            Console.WriteLine("CLIENTE       : " + o.Cliente);
+            Console.WriteLine("TELÉF         : " + o.Telefono);
+            Console.WriteLine("DIRECC        : " + o.Direccion);
+            Console.WriteLine("RECOJO DOM.   : " + (o.IncluyeRecojo ? "Sí" : "No"));
+            Console.WriteLine("FECHA         : " + o.FechaRecepcion.ToString("dd/MM/yyyy"));
             Console.WriteLine("--------------------------------------------------");
-            Console.WriteLine($"DETALLE : {o.DetallePrendas}");
-            Console.WriteLine($"PESO TOT: {o.PesoKg} Kg");
+            Console.WriteLine("DETALLE       : " + o.DetallePrendas);
+            Console.WriteLine("PESO TOTAL    : " + o.PesoKg + " Kg");
             Console.WriteLine("--------------------------------------------------");
-            Console.WriteLine($"TOTAL A PAGAR : S/ {o.Total:F2}");
-            Console.WriteLine($"A CUENTA      : S/ {o.ACuenta:F2}");
-            Console.WriteLine($"SALDO         : S/ {(o.Total - o.ACuenta):F2}");
-            Console.WriteLine($"CONDICIÓN     : {o.CondicionPago}");
-            Console.WriteLine($"FECHA ENTREGA : {o.FechaEntrega:dd/MM/yyyy}");
+            Console.WriteLine("TOTAL A PAGAR : S/ " + o.Total.ToString("F2"));
+            Console.WriteLine("A CUENTA      : S/ " + o.ACuenta.ToString("F2"));
+            Console.WriteLine("SALDO         : S/ " + (o.Total - o.ACuenta).ToString("F2"));
+            Console.WriteLine("CONDICIÓN     : " + o.CondicionPago);
+            Console.WriteLine("MÉTODO PAGO   : " + o.MetodoPago);
+            Console.WriteLine("FECHA ENTREGA : " + o.FechaEntrega.ToString("dd/MM/yyyy"));
             Console.WriteLine("==================================================");
         }
 
         public void BuscarPorCliente(string nombre)
         {
-            Console.WriteLine($"\n--- BÚSQUEDA POR CLIENTE: '{nombre}' ---");
+            Console.WriteLine();
+            Console.WriteLine("--- BÚSQUEDA POR CLIENTE: '" + nombre + "' ---");
             bool hallado = false;
             foreach (var o in listaOrdenes)
             {
                 if (o.Cliente.ToLower().Contains(nombre.ToLower()))
                 {
-                    // Muestra los servicios y los detalles de pago solicitados en el punto 3
-                    Console.WriteLine($"O/S: {o.NumeroOrden} | Cliente: {o.Cliente} | Servicios: {o.DetallePrendas} | Peso: {o.PesoKg}Kg | Total: S/ {o.Total:F2} | A Cuenta: S/ {o.ACuenta:F2} | Condición: {o.CondicionPago} | Estado: {o.Estado}");
+                    Console.WriteLine();
+                    Console.WriteLine("--------------------------------------------------");
+                    Console.WriteLine("[O/S N.° " + o.NumeroOrden + "]");
+                    Console.WriteLine("Cliente        : " + o.Cliente);
+                    Console.WriteLine("Detalle        : " + o.DetallePrendas);
+                    Console.WriteLine("Peso Total     : " + o.PesoKg + " Kg");
+                    Console.WriteLine("Total a Pagar  : S/ " + o.Total.ToString("F2"));
+                    Console.WriteLine("A Cuenta       : S/ " + o.ACuenta.ToString("F2"));
+                    Console.WriteLine("Saldo Pendiente: S/ " + (o.Total - o.ACuenta).ToString("F2"));
+                    Console.WriteLine("Condición Pago : " + o.CondicionPago);
+                    Console.WriteLine("Método de Pago : " + o.MetodoPago);
+                    Console.WriteLine("Estado O/S     : " + o.Estado.ToUpper());
+                    Console.WriteLine("--------------------------------------------------");
                     hallado = true;
                 }
             }
@@ -261,19 +317,25 @@ namespace LavanderiaOrquideas
 
         public void BuscarPorCodigo(int codigo)
         {
-            Console.WriteLine($"\n--- BÚSQUEDA POR CÓDIGO O/S: {codigo} ---");
+            Console.WriteLine();
+            Console.WriteLine("--- BÚSQUEDA POR CÓDIGO O/S: " + codigo + " ---");
             Orden o = listaOrdenes.Find(x => x.NumeroOrden == codigo);
             if (o != null)
             {
-                Console.WriteLine($"Cliente         : {o.Cliente}");
-                Console.WriteLine($"Servicios/Det.  : {o.DetallePrendas}");
-                Console.WriteLine($"Peso Total      : {o.PesoKg} Kg");
-                Console.WriteLine($"Recojo a Dom.   : {(o.IncluyeRecojo ? "Sí" : "No")}");
-                Console.WriteLine($"Total a Pagar   : S/ {o.Total:F2}");
-                Console.WriteLine($"A Cuenta        : S/ {o.ACuenta:F2}");
-                Console.WriteLine($"Saldo Pendiente : S/ {(o.Total - o.ACuenta):F2}");
-                Console.WriteLine($"Condición Pago  : {o.CondicionPago}");
-                Console.WriteLine($"Estado O/S      : {o.Estado}");
+                Console.WriteLine();
+                Console.WriteLine("--------------------------------------------------");
+                Console.WriteLine("[O/S N.° " + o.NumeroOrden + "]");
+                Console.WriteLine("Cliente        : " + o.Cliente);
+                Console.WriteLine("Detalle        : " + o.DetallePrendas);
+                Console.WriteLine("Peso Total     : " + o.PesoKg + " Kg");
+                Console.WriteLine("Total a Pagar  : S/ " + o.Total.ToString("F2"));
+                Console.WriteLine("Adelanto       : S/ " + o.ACuenta.ToString("F2"));
+                Console.WriteLine("Saldo Pendiente: S/ " + (o.Total - o.ACuenta).ToString("F2"));
+                Console.WriteLine("Condición Pago : " + o.CondicionPago);
+                Console.WriteLine("Método de Pago : " + o.MetodoPago);
+                Console.WriteLine("Recojo Dom.    : " + (o.IncluyeRecojo ? "Sí" : "No"));
+                Console.WriteLine("Estado O/S     : " + o.Estado.ToUpper());
+                Console.WriteLine("--------------------------------------------------");
             }
             else
             {
@@ -287,14 +349,15 @@ namespace LavanderiaOrquideas
             if (o != null)
             {
                 o.Estado = nuevoEstado;
-                Console.WriteLine($"\n--> ¡Éxito! La orden O/S {codigo} cambió su estado a: '{nuevoEstado}'.");
+                Console.WriteLine();
+                Console.WriteLine("--> ¡Éxito! La orden O/S " + codigo + " cambió su estado a: '" + nuevoEstado + "'.");
                 return true;
             }
-            Console.WriteLine("\n--> Orden no encontrada.");
+            Console.WriteLine();
+            Console.WriteLine("--> Orden no encontrada.");
             return false;
         }
 
-        // Ordenamiento por Algoritmo de la Burbuja por Número de Orden
         public void OrdenarPorBurbuja()
         {
             int n = listaOrdenes.Count;
@@ -310,11 +373,14 @@ namespace LavanderiaOrquideas
                     }
                 }
             }
-            Console.WriteLine("\n--> Lista de órdenes ordenada correctamente por número de O/S (Burbuja).");
+            Console.WriteLine();
+            Console.WriteLine("--> Lista de órdenes ordenada correctamente por número de O/S (Burbuja).");
         }
+
         public void ListarTodas()
         {
-            Console.WriteLine("\n--- LISTADO GENERAL DE ÓRDENES ---");
+            Console.WriteLine();
+            Console.WriteLine("--- LISTADO GENERAL DE ÓRDENES ---");
             if (listaOrdenes.Count == 0)
             {
                 Console.WriteLine("No hay órdenes registradas.");
@@ -322,7 +388,13 @@ namespace LavanderiaOrquideas
             }
             foreach (var o in listaOrdenes)
             {
-                Console.WriteLine($"[O/S: {o.NumeroOrden}] - Cliente: {o.Cliente} - Total: S/ {o.Total:F2} - Condición: {o.CondicionPago} - Estado: {o.Estado}");
+                Console.WriteLine();
+                Console.WriteLine("--------------------------------------------------");
+                Console.WriteLine("[O/S N.° " + o.NumeroOrden + "] - Cliente: " + o.Cliente);
+                Console.WriteLine("Detalle : " + o.DetallePrendas);
+                Console.WriteLine("Total   : S/ " + o.Total.ToString("F2") + " | Adelanto: S/ " + o.ACuenta.ToString("F2") + " (" + o.CondicionPago + ") - Pago: " + o.MetodoPago);
+                Console.WriteLine("Estado  : " + o.Estado.ToUpper());
+                Console.WriteLine("--------------------------------------------------");
             }
         }
     }
