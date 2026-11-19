@@ -416,7 +416,7 @@ namespace LavanderiaOrquideas
             foreach (var o in listaOrdenes)
             {
                 Console.WriteLine();
-                Console.WriteLine("--------------------------------------------------");
+                Console.WriteLine("-------------------------------------------------");
                 Console.WriteLine("[O/S N.° " + o.NumeroOrden + "] - Cliente: " + o.Cliente);
                 Console.WriteLine("Fecha/Hora : " + o.FechaRecepcion.ToString("dd/MM/yyyy HH:mm"));
                 Console.WriteLine("Detalle    : " + o.DetallePrendas);
