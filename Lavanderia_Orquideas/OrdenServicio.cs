@@ -24,7 +24,7 @@ namespace LavanderiaOrquideas
 
         public string ParaArchivo()
         {
-            return NumeroOrden + ";" + Cliente + ";" + Telefono + ";" + Direccion + ";" + DetallePrendas + ";" + Total + ";" + ACuenta + ";" + Estado + ";" + FechaRecepcion.ToString("yyyy-MM-dd") + ";" + FechaEntrega.ToString("yyyy-MM-dd") + ";" + PesoKg + ";" + IncluyeRecojo + ";" + CondicionPago + ";" + MetodoPago;
+            return NumeroOrden + ";" + Cliente + ";" + Telefono + ";" + Direccion + ";" + DetallePrendas + ";" + Total + ";" + ACuenta + ";" + Estado + ";" + FechaRecepcion.ToString("yyyy-MM-dd HH:mm:ss") + ";" + FechaEntrega.ToString("yyyy-MM-dd HH:mm:ss") + ";" + PesoKg + ";" + IncluyeRecojo + ";" + CondicionPago + ";" + MetodoPago;
         }
     }
 
@@ -60,29 +60,11 @@ namespace LavanderiaOrquideas
 
             o.NumeroOrden = listaOrdenes.Count + 1;
 
-            string clienteValido = "";
-            while (true)
-            {
-                Console.Write("CLIENTE : ");
-                string entrada = Console.ReadLine();
-                if (entrada != null) entrada = entrada.Trim();
-
-                if (!string.IsNullOrEmpty(entrada) && System.Text.RegularExpressions.Regex.IsMatch(entrada, "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$"))
-                {
-                    clienteValido = entrada;
-                    break;
-                }
-                Console.WriteLine("[Error] El nombre solo debe contener letras y espacios.");
-            }
-            o.Cliente = clienteValido;
-
             string telefonoValido = "";
             while (true)
             {
-                Console.Write("TELÉF   : ");
-                string entrada = Console.ReadLine();
-                if (entrada != null) entrada = entrada.Trim();
-
+                Console.Write("TELÉFONO : ");
+                string entrada = Console.ReadLine()?.Trim();
                 if (entrada.Length == 9 && long.TryParse(entrada, out _) && entrada.StartsWith("9"))
                 {
                     telefonoValido = entrada;
@@ -92,8 +74,49 @@ namespace LavanderiaOrquideas
             }
             o.Telefono = telefonoValido;
 
-            Console.Write("DIRECC  : ");
-            o.Direccion = Console.ReadLine();
+            Orden clienteExistente = listaOrdenes.FindLast(x => x.Telefono == o.Telefono);
+
+            if (clienteExistente != null)
+            {
+                o.Cliente = clienteExistente.Cliente;
+
+                Console.WriteLine();
+                Console.WriteLine("[¡Cliente Frecuente Detectado!]: Bienvenido de nuevo, " + o.Cliente + ".");
+                Console.WriteLine("Dirección registrada: " + clienteExistente.Direccion);
+
+                Console.Write("¿Desea mantener esta dirección? (s/n): ");
+                string respuestaDir = Console.ReadLine()?.Trim().ToLower();
+
+                if (respuestaDir == "n")
+                {
+                    Console.Write("Ingrese la NUEVA dirección: ");
+                    o.Direccion = Console.ReadLine();
+                }
+                else
+                {
+                    o.Direccion = clienteExistente.Direccion;
+                    Console.WriteLine("-> Se mantiene la dirección anterior.");
+                }
+            }
+            else
+            {
+                string clienteValido = "";
+                while (true)
+                {
+                    Console.Write("CLIENTE (Nuevo): ");
+                    string entrada = Console.ReadLine()?.Trim();
+                    if (!string.IsNullOrEmpty(entrada) && System.Text.RegularExpressions.Regex.IsMatch(entrada, @"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"))
+                    {
+                        clienteValido = entrada;
+                        break;
+                    }
+                    Console.WriteLine("[Error] El nombre solo debe contener letras y espacios.");
+                }
+                o.Cliente = clienteValido;
+
+                Console.Write("DIRECC  : ");
+                o.Direccion = Console.ReadLine();
+            }
 
             Console.Write("¿Incluye servicio de recojo a domicilio? (s/n): ");
             string recojoInput = Console.ReadLine();
@@ -101,7 +124,8 @@ namespace LavanderiaOrquideas
             o.IncluyeRecojo = (recojoInput == "s");
 
             o.FechaRecepcion = DateTime.Now;
-            o.FechaEntrega = DateTime.Now.AddDays(3);
+            DateTime entregaEstimada = DateTime.Now.AddDays(3);
+            o.FechaEntrega = new DateTime(entregaEstimada.Year, entregaEstimada.Month, entregaEstimada.Day, 17, 0, 0);
 
             string detallesConcatenados = "";
             decimal totalAcumulado = 0m;
@@ -273,7 +297,7 @@ namespace LavanderiaOrquideas
             Console.WriteLine("TELÉF         : " + o.Telefono);
             Console.WriteLine("DIRECC        : " + o.Direccion);
             Console.WriteLine("RECOJO DOM.   : " + (o.IncluyeRecojo ? "Sí" : "No"));
-            Console.WriteLine("FECHA         : " + o.FechaRecepcion.ToString("dd/MM/yyyy"));
+            Console.WriteLine("FECHA/HORA    : " + o.FechaRecepcion.ToString("dd/MM/yyyy HH:mm"));
             Console.WriteLine("--------------------------------------------------");
             Console.WriteLine("DETALLE       : " + o.DetallePrendas);
             Console.WriteLine("PESO TOTAL    : " + o.PesoKg + " Kg");
@@ -283,7 +307,7 @@ namespace LavanderiaOrquideas
             Console.WriteLine("SALDO         : S/ " + (o.Total - o.ACuenta).ToString("F2"));
             Console.WriteLine("CONDICIÓN     : " + o.CondicionPago);
             Console.WriteLine("MÉTODO PAGO   : " + o.MetodoPago);
-            Console.WriteLine("FECHA ENTREGA : " + o.FechaEntrega.ToString("dd/MM/yyyy"));
+            Console.WriteLine("FECHA ENTREGA : " + o.FechaEntrega.ToString("dd/MM/yyyy HH:mm"));
             Console.WriteLine("==================================================");
         }
 
@@ -300,6 +324,7 @@ namespace LavanderiaOrquideas
                     Console.WriteLine("--------------------------------------------------");
                     Console.WriteLine("[O/S N.° " + o.NumeroOrden + "]");
                     Console.WriteLine("Cliente        : " + o.Cliente);
+                    Console.WriteLine("F. Recepción   : " + o.FechaRecepcion.ToString("dd/MM/yyyy HH:mm"));
                     Console.WriteLine("Detalle        : " + o.DetallePrendas);
                     Console.WriteLine("Peso Total     : " + o.PesoKg + " Kg");
                     Console.WriteLine("Total a Pagar  : S/ " + o.Total.ToString("F2"));
@@ -326,6 +351,7 @@ namespace LavanderiaOrquideas
                 Console.WriteLine("--------------------------------------------------");
                 Console.WriteLine("[O/S N.° " + o.NumeroOrden + "]");
                 Console.WriteLine("Cliente        : " + o.Cliente);
+                Console.WriteLine("F. Recepción   : " + o.FechaRecepcion.ToString("dd/MM/yyyy HH:mm"));
                 Console.WriteLine("Detalle        : " + o.DetallePrendas);
                 Console.WriteLine("Peso Total     : " + o.PesoKg + " Kg");
                 Console.WriteLine("Total a Pagar  : S/ " + o.Total.ToString("F2"));
@@ -334,6 +360,7 @@ namespace LavanderiaOrquideas
                 Console.WriteLine("Condición Pago : " + o.CondicionPago);
                 Console.WriteLine("Método de Pago : " + o.MetodoPago);
                 Console.WriteLine("Recojo Dom.    : " + (o.IncluyeRecojo ? "Sí" : "No"));
+                Console.WriteLine("F. Est. Entrega: " + o.FechaEntrega.ToString("dd/MM/yyyy HH:mm"));
                 Console.WriteLine("Estado O/S     : " + o.Estado.ToUpper());
                 Console.WriteLine("--------------------------------------------------");
             }
@@ -391,9 +418,10 @@ namespace LavanderiaOrquideas
                 Console.WriteLine();
                 Console.WriteLine("--------------------------------------------------");
                 Console.WriteLine("[O/S N.° " + o.NumeroOrden + "] - Cliente: " + o.Cliente);
-                Console.WriteLine("Detalle : " + o.DetallePrendas);
-                Console.WriteLine("Total   : S/ " + o.Total.ToString("F2") + " | Adelanto: S/ " + o.ACuenta.ToString("F2") + " (" + o.CondicionPago + ") - Pago: " + o.MetodoPago);
-                Console.WriteLine("Estado  : " + o.Estado.ToUpper());
+                Console.WriteLine("Fecha/Hora : " + o.FechaRecepcion.ToString("dd/MM/yyyy HH:mm"));
+                Console.WriteLine("Detalle    : " + o.DetallePrendas);
+                Console.WriteLine("Total      : S/ " + o.Total.ToString("F2") + " | Adelanto: S/ " + o.ACuenta.ToString("F2") + " (" + o.CondicionPago + ")");
+                Console.WriteLine("Estado     : " + o.Estado.ToUpper());
                 Console.WriteLine("--------------------------------------------------");
             }
         }
