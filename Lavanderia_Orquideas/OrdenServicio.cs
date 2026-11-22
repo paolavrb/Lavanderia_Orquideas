@@ -678,5 +678,52 @@ namespace LavanderiaOrquideas
             o.Estado = nuevoEstado.Trim().ToLower();
             return true;
         }
+
+        public void OrdenarPorBurbuja()
+        {
+            int n = listaOrdenes.Count;
+            for (int i = 0; i < n - 1; i++)
+            {
+                for (int j = 0; j < n - i - 1; j++)
+                {
+                    if (listaOrdenes[j].NumeroOrden > listaOrdenes[j + 1].NumeroOrden)
+                    {
+                        Orden temp = listaOrdenes[j];
+                        listaOrdenes[j] = listaOrdenes[j + 1];
+                        listaOrdenes[j + 1] = temp;
+                    }
+                }
+            }
+        }
+
+        public void ListarTodas()
+        {
+            Console.WriteLine();
+            Console.WriteLine("--- LISTADO DE ÓRDENES DE SERVICIO ---");
+            if (listaOrdenes.Count == 0)
+            {
+                Console.WriteLine("No hay órdenes registradas.");
+                return;
+            }
+
+            foreach (var o in listaOrdenes)
+            {
+                Console.WriteLine("--------------------------------------------------");
+                Console.WriteLine("[O/S N.° " + o.NumeroOrden + "]");
+                Console.WriteLine("Cliente        : " + (o.Cliente ?? ""));
+                Console.WriteLine("Teléfono       : " + (o.Telefono ?? ""));
+                Console.WriteLine("F. Recepción   : " + o.FechaRecepcion.ToString("dd/MM/yyyy HH:mm"));
+                Console.WriteLine("F. Entrega     : " + o.FechaEntrega.ToString("dd/MM/yyyy HH:mm"));
+                Console.WriteLine("Detalle        : " + (o.DetallePrendas ?? ""));
+                Console.WriteLine("Peso Total     : " + o.PesoKg + " Kg");
+                Console.WriteLine("Total a Pagar  : S/ " + o.Total.ToString("F2"));
+                Console.WriteLine("A Cuenta       : S/ " + o.ACuenta.ToString("F2"));
+                Console.WriteLine("Saldo Pendiente: S/ " + (o.Total - o.ACuenta).ToString("F2"));
+                Console.WriteLine("Condición Pago : " + (o.CondicionPago ?? ""));
+                Console.WriteLine("Método de Pago : " + (o.MetodoPago ?? ""));
+                Console.WriteLine("Estado O/S     : " + (o.Estado ?? "").ToUpper());
+            }
+            Console.WriteLine("--------------------------------------------------");
+        }
     }
 }
